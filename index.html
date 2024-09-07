@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Horas Semanales</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f7f8;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #4CAF50;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: center;
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+            font-weight: bold;
+        }
+        input[type="time"], input[type="date"], input[type="text"] {
+            width: 90%;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            text-align: center;
+        }
+        input[readonly] {
+            background-color: #e9e9e9;
+        }
+        tfoot {
+            font-weight: bold;
+            background-color: #f9f9f9;
+        }
+        .total-semanal {
+            background-color: #4CAF50;
+            color: white;
+            font-size: 1.1em;
+            padding: 10px;
+            text-align: center;
+        }
+        .buttons {
+            margin-top: 20px;
+            text-align: center;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <h1>Registro de Horas Semanales</h1>
+    
+    <!-- Tabla de registro de horas -->
+    <div id="capture-area">
+        <table>
+            <thead>
+                <tr>
+                    <th>Día</th>
+                    <th>Fecha</th>
+                    <th>Ingreso Mañana</th>
+                    <th>Salida Mañana</th>
+                    <th>Horas Mañana</th>
+                    <th>Ingreso Tarde</th>
+                    <th>Salida Tarde</th>
+                    <th>Horas Tarde</th>
+                    <th>Total del Día</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Lunes</td>
+                    <td><input type="date"></td>
+                    <td><input type="time"></td>
+                    <td><input type="time"></td>
+                    <td><input type="text" readonly></td>
+                    <td><input type="time"></td>
+                    <td><input type="time"></td>
+                    <td><input type="text" readonly></td>
+                    <td><input type="text" readonly></td>
+                </tr>
+                <!-- Repetir las filas para los días de la semana -->
+                <tr>
+                    <td>Martes</td>
+                    <td><input type="date"></td>
+                    <td><input type="time"></td>
+                    <td><input type="time"></td>
+                    <td><input type="text" readonly></td>
+                    <td><input type="time"></td>
+                    <td><input type="time"></td>
+                    <td><input type="text" readonly></td>
+                    <td><input type="text" readonly></td>
+                </tr>
+                <!-- Agregar las demás filas para los días de la semana -->
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="8" class="total-semanal">Total de horas de la semana:</td>
+                    <td><input type="text" id="total-semanal" readonly></td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+
+    <div class="buttons">
+        <button id="save-btn">Guardar</button>
+        <button id="clear-btn">Borrar</button>
+        <button id="capture-btn">Generar Imagen</button>
+    </div>
+
+    <!-- Incluir html2canvas -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <script>
+        const rows = document.querySelectorAll('tbody tr');
+
+        rows.forEach(row => {
+            const inputs = row.querySelectorAll('input[type="time"]');
+            const mañana = row.querySelectorAll('input[type="text"]')[0];
+            const tarde = row.querySelectorAll('input[type="text"]')[1];
+            const totalDia = row.querySelectorAll('input[type="text"]')[2];
+
+            inputs.forEach(input => input.addEventListener('change', () => {
+                let horasMañana = calcularHoras(inputs[0].value, inputs[1].value);
+                let horasTarde = calcularHoras(inputs[2].value, inputs[3].value);
+
+                mañana.value = formatoHora(horasMañana);
+                tarde.value = formatoHora(horasTarde);
+                totalDia.value = formatoHora(horasMañana + horasTarde);
+
+                calcularTotalSemanal();
+            }));
+        });
+
+        function calcularHoras(inicio, fin) {
+            if (!inicio || !fin) return 0;
+            const [hInicio, mInicio] = inicio.split(':').map(Number);
+            const [hFin, mFin] = fin.split(':').map(Number);
+            const totalHoras = (hFin + mFin / 60) - (hInicio + mInicio / 60);
+            return totalHoras > 0 ? totalHoras : 0;
+        }
+
+        function formatoHora(decimal) {
+            const horas = Math.floor(decimal);
+            const minutos = Math.round((decimal - horas) * 60);
+            return `${horas}:${minutos.toString().padStart(2, '0')}`;
+        }
+
+        function calcularTotalSemanal() {
+            let total = 0;
+            rows.forEach(row => {
+                const totalDia = row.querySelectorAll('input[type="text"]')[2].value;
+                if (totalDia) {
+                    const [horas, minutos] = totalDia.split(':').map(Number);
+                    total += horas + minutos / 60;
+                }
+            });
+            document.getElementById('total-semanal').value = formatoHora(total);
+        }
+
+        // Guardar datos en localStorage
+        document.getElementById('save-btn').addEventListener('click', () => {
+            localStorage.setItem('registroHoras', JSON.stringify(getData()));
+        });
+
+        // Borrar datos y recargar la página
+        document.getElementById('clear-btn').addEventListener('click', () => {
+            if (confirm("¿Estás seguro de que deseas borrar todos los datos?")) {
+                localStorage.clear();
+                location.reload();
+            }
+        });
+
+        function getData() {
+            const data = [];
+            rows.forEach(row => {
+                const date = row.querySelector('input[type="date"]').value;
+                const times = Array.from(row.querySelectorAll('input[type="time"]')).map(input => input.value);
+                const results = Array.from(row.querySelectorAll('input[type="text"]')).map(input => input.value);
+                data.push({ date, times, results });
+            });
+            return data;
+        }
+
+        // Cargar datos de localStorage al iniciar
+        window.addEventListener('load', () => {
+            const savedData = JSON.parse(localStorage.getItem('registroHoras'));
+            if (savedData) {
+                rows.forEach((row, index) => {
+                    row.querySelector('input[type="date"]').value = savedData[index].date;
+                    row.querySelectorAll('input[type="time"]').forEach((input, i) => {
+                        input.value = savedData[index].times[i];
+                    });
+                    row.querySelectorAll('input[type="text"]').forEach((input, i) => {
+                        input.value = savedData[index].results[i];
+                    });
+                });
+                calcularTotalSemanal();
+            }
+        });
+
+        // Capturar la imagen del cuadro completo
+        document.getElementById('capture-btn').addEventListener('click', () => {
+            const captureArea = document.getElementById('capture-area');
+            html2canvas(captureArea).then(canvas => {
+                const link = document.createElement('a');
+                link.download = 'registro_horas.png';
+                link.href = canvas.toDataURL();
+                link.click();
+            });
+        });
+    </script>
+</body>
+</html>
